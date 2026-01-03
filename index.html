@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Timer Web App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    (function () {
+      const PORTRAIT = "portrait.html";
+      const LANDSCAPE = "landscape.html";
+
+      function pickTarget() {
+        return window.matchMedia("(orientation: portrait)").matches ? PORTRAIT : LANDSCAPE;
+      }
+
+      function go() {
+        const target = pickTarget();
+        const current = (location.pathname.split("/").pop() || "index.html");
+        if (current !== target) {
+          location.replace(target + location.search + location.hash);
+        }
+      }
+
+      let t = null;
+      window.addEventListener("orientationchange", go);
+      window.addEventListener("resize", function () {
+        clearTimeout(t);
+        t = setTimeout(go, 150);
+      });
+
+      go();
+    })();
+  </script>
+</head>
+<body>
+  <div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-orange-50 p-4">
+    <div class="w-full max-w-md text-center">
+      <div class="text-sm text-gray-500">화면 방향을 확인하는 중...</div>
+    </div>
+  </div>
+</body>
+</html>

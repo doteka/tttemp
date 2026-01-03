@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Timer Web App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    (function () {
+      // 가로 화면이 아닌데 이 페이지로 들어오면 세로 화면용으로 이동
+      const PORTRAIT = "portrait.html";
+      const LANDSCAPE = "landscape.html";
+
+      function pickTarget() {
+        return window.matchMedia("(orientation: portrait)").matches ? PORTRAIT : LANDSCAPE;
+      }
+
+      function ensure() {
+        const target = pickTarget();
+        const current = (location.pathname.split("/").pop() || LANDSCAPE);
+        if (current !== target) {
+          location.replace(target + location.search + location.hash);
+        }
+      }
+
+      let t = null;
+      window.addEventListener("orientationchange", ensure);
+      window.addEventListener("resize", function () {
+        clearTimeout(t);
+        t = setTimeout(ensure, 150);
+      });
+
+      ensure();
+    })();
+  </script>
+</head>
+<body class="is-landscape">
+  <div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-orange-50 p-4">
+    <div class="landscape-shell">
+      <!-- 좌측: 시간 표시 -->
+      <div class="landscape-time-panel">
+        <div id="timeText" class="text-7xl font-bold text-gray-800 tabular-nums">00:00</div>
+        <div id="percentText" class="text-sm text-gray-500 mt-2">0%</div>
+      </div>
+
+      <!-- 중앙: 타이머 원형 -->
+      <div class="landscape-dial-panel">
+        <div class="relative w-full landscape-dial-wrap" style="aspect-ratio: 320 / 344;">
+          <svg
+            id="dial"
+            class="w-full h-full cursor-pointer"
+            viewBox="0 0 320 320"
+            aria-label="Pomodoro Timer Dial"
+          >
+            <!-- 배경 원 (전체 회색) -->
+            <circle
+              cx="160"
+              cy="160"
+              r="140"
+              fill="none"
+              stroke="#e5e7eb"
+              stroke-width="12"
+            ></circle>
+
+            <!-- 남은 시간 원 (그라디언트) - 12시 방향부터 시작 -->
+            <circle
+              id="progressCircle"
+              cx="160"
+              cy="160"
+              r="140"
+              fill="none"
+              stroke="url(#gradient)"
+              stroke-width="12"
+              stroke-linecap="round"
+              transform="rotate(-90 160 160)"
+            ></circle>
+
+            <!-- 시간 눈금 표시(10,20,30,40,50,60) -->
+            <g id="markers"></g>
+
+            <!-- 서클 슬라이더 핸들 -->
+            <g class="pointer-events-none" id="pointer-events-none">
+              <circle
+                id="handleOuter"
+                stroke="url(#gradient)"
+                stroke-width="3"
+                class="drop-shadow-lg"
+              ></circle>
+              <image
+                id="handleInner"
+                href="./animation/cursor.png"
+                x="-25"
+                y="-25"
+                width="50"
+                height="50"
+                preserveAspectRatio="xMidYMid meet"
+              />
+            </g>
+
+            <!-- 그라디언트 정의 -->
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e11d48 "></stop>
+                <stop offset="100%" stop-color="#9f1239"></stop>
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <!-- 중앙 컨텐츠 -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <div class="center-avatar rounded-full overflow-hidden bg-white shadow-lg">
+              <img
+                id="default_centerImg"
+                src="./animation/circle_5.png"
+                alt="타이머 이미지"
+                class="w-full h-full object-cover"
+              />
+              <div
+                id="centerImg"
+                data-type="happy"
+                alt="타이머 이미지"
+                class="w-full h-full object-cover"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측: 버튼 -->
+      <div class="landscape-controls-panel">
+        <div class="landscape-controls">
+          <!-- 리셋 버튼 -->
+          <button
+            id="resetBtn"
+            class="p-6 rounded-full bg-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            aria-label="리셋"
+            type="button"
+          >
+            <svg class="w-6 h-6 text-gray-700" viewBox="1 -3 21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 2v6h6"></path>
+              <path d="M3 8a9 9 0 1 1 3 6.7L3 14"></path>
+            </svg>
+          </button>
+
+          <!-- 시작/일시정지 버튼 -->
+          <button
+            id="toggleBtn"
+            class="p-6 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="시작/일시정지"
+            type="button"
+            disabled
+          >
+            <svg id="playIcon" class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="pauseIcon" class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
+              <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+              <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
